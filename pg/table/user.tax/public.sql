@@ -43,13 +43,13 @@ BEGIN
 
 SELECT id,mail_user.ctime,mail_user.password_hash INTO pre_id,pre_ctime,pre_password_hash FROM mail_user WHERE mail_user.oid=upsert_password_hash.oid and mail_user.mail_id=upsert_password_hash.mail_id;
  
-IF pre_id > 0 THEN
+IF pre_id is NULL THEN
+  INSERT INTO mail_user (oid,ctime,mail_id,password_hash) VALUES (oid,ctime,mail_id,password_hash);
+ELSE
   IF ctime > pre_ctime THEN
     INSERT INTO mail_user_log (oid,ctime,mail_id,password_hash) VALUES (oid,pre_ctime,mail_id,pre_password_hash);
     UPDATE mail_user SET password_hash=upsert_password_hash.password_hash,ctime=upsert_password_hash.ctime WHERE id=pre_id;
   END IF;
-ELSE
-  INSERT INTO mail_user (oid,ctime,mail_id,password_hash) VALUES (oid,ctime,mail_id,password_hash);
 END IF;
 
 END;
