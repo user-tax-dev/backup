@@ -1,0 +1,79 @@
+name: cron
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 15 * * *'
+  push:
+    branches: [ main ]
+    tags:
+      - v*
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: build
+    strategy:
+      matrix:
+        platform: [ubuntu-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: user-tax-key/backup
+          path: key/backup
+      
+      - uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.GH_PAT }}
+          repository: user-tax-key/db
+          path: key/db
+      
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          path: contabo
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 7
+          run_install: false
+ 
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        run: |
+          echo "::set-output name=pnpm_cache_dir::$(pnpm store path)"
+
+      - uses: actions/cache@v3
+        name: Setup pnpm cache
+        with:
+          path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+          
+      - id: backup
+        name: backup
+        run: |
+          sudo apt-get install -y rclone zstd
+          mkdir -p ~/.config/rclone
+          cp key/backup/rclone.conf ~/.config/rclone
+          cd contabo
+          pnpm install --frozen-lockfile --production
+          ./run.sh
+          ./commit.sh && echo ::set-output name=push::1 || true
+
+      - name: push
+        if: steps.backup.outputs.push == '1'
+        uses: ad-m/github-push-action@master
+        with:
+          directory: contabo
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
+

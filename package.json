@@ -1,0 +1,13 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "@iuser/node-loader": "^0.0.21",
+    "coffee_plus": "^0.0.39"
+  },
+  "dependencies": {
+    "@iuser/pg": "^0.0.7",
+    "@rmw/thisdir": "^0.0.2",
+    "uuid": "^9.0.0",
+    "zx": "^7.0.8"
+  }
+}
