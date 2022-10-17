@@ -3,6 +3,8 @@
 > zx/globals:
   path > dirname join
   @rmw/thisdir
+  @iuser/read
+  @iuser/write
   fs/promises > rename readFile opendir
   @iuser/pg
 
@@ -40,6 +42,11 @@ dump = (mod)=>
       $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
       $"#{ROOT}/pg/data.sh #{bucket} #{db} #{schema_name}"
     ]
+    fp = "pg/table/#{db}/#{schema_name}.sql"
+    write(
+      fp
+      read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXIST ')
+    )
   return
 
 backup = =>

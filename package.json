@@ -6,6 +6,8 @@
   },
   "dependencies": {
     "@iuser/pg": "^0.0.7",
+    "@iuser/read": "^0.0.5",
+    "@iuser/write": "^0.0.7",
     "@rmw/thisdir": "^0.0.2",
     "uuid": "^9.0.0",
     "zx": "^7.0.8"
