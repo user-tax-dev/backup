@@ -28,56 +28,30 @@ CREATE SCHEMA public;
 COMMENT ON SCHEMA public IS 'standard public schema';
 
 
---
--- Name: upsert_password_hash(bigint, bigint, bigint, bytea); Type: FUNCTION; Schema: public; Owner: -
---
-
-CREATE FUNCTION public.upsert_password_hash(oid bigint, ctime bigint, mail_id bigint, password_hash bytea) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-Declare
-pre_id bigint;
-pre_ctime bigint;
-pre_password_hash md5hash;
-BEGIN
-
-SELECT id,mail_user.ctime,mail_user.password_hash INTO pre_id,pre_ctime,pre_password_hash FROM mail_user WHERE mail_user.oid=upsert_password_hash.oid and mail_user.mail_id=upsert_password_hash.mail_id;
- 
-IF pre_id is NULL THEN
-  INSERT INTO mail_user (oid,ctime,mail_id,password_hash) VALUES (oid,ctime,mail_id,password_hash);
-ELSE
-  IF ctime > pre_ctime THEN
-    INSERT INTO mail_user_log (oid,ctime,mail_id,password_hash) VALUES (oid,pre_ctime,mail_id,pre_password_hash);
-    UPDATE mail_user SET password_hash=upsert_password_hash.password_hash,ctime=upsert_password_hash.ctime WHERE id=pre_id;
-  END IF;
-END IF;
-
-END;
-$$;
-
-
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: mail_user; Type: TABLE; Schema: public; Owner: -
+-- Name: user_log; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.mail_user (
-    id bigint NOT NULL,
-    oid bigint NOT NULL,
-    ctime bigint NOT NULL,
-    mail_id bigint NOT NULL,
-    password_hash public.md5hash NOT NULL
+CREATE TABLE public.user_log (
+    id public.u64 NOT NULL,
+    oid public.u64 NOT NULL,
+    cid public.u16 NOT NULL,
+    uid public.u64 NOT NULL,
+    val bytea DEFAULT '\x'::bytea NOT NULL,
+    ctime public.u64 DEFAULT date_part('epoch'::text, now()) NOT NULL,
+    ip bytea
 );
 
 
 --
--- Name: mail_user_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.mail_user_id_seq
+CREATE SEQUENCE public.user_log_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -86,17 +60,29 @@ CREATE SEQUENCE public.mail_user_id_seq
 
 
 --
--- Name: mail_user_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: user_log_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.mail_user_id_seq OWNED BY public.mail_user.id;
+ALTER SEQUENCE public.user_log_id_seq OWNED BY public.user_log.id;
 
 
 --
--- Name: mail_user_log_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: user_mail; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.mail_user_log_id_seq
+CREATE TABLE public.user_mail (
+    id public.u64 NOT NULL,
+    oid public.u64 NOT NULL,
+    uid public.u64 NOT NULL,
+    mail_id public.u64 NOT NULL
+);
+
+
+--
+-- Name: user_mail_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_mail_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -105,47 +91,117 @@ CREATE SEQUENCE public.mail_user_log_id_seq
 
 
 --
--- Name: mail_user_log; Type: TABLE; Schema: public; Owner: -
+-- Name: user_mail_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-CREATE TABLE public.mail_user_log (
-    id bigint DEFAULT nextval('public.mail_user_log_id_seq'::regclass) NOT NULL,
-    oid bigint NOT NULL,
-    ctime bigint NOT NULL,
-    mail_id bigint NOT NULL,
-    password_hash public.md5hash NOT NULL
+ALTER SEQUENCE public.user_mail_id_seq OWNED BY public.user_mail.id;
+
+
+--
+-- Name: user_password; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_password (
+    id public.u64 NOT NULL,
+    oid public.u64 NOT NULL,
+    uid public.u64 NOT NULL,
+    hash public.md5hash NOT NULL,
+    ctime public.u64 NOT NULL
 );
 
 
 --
--- Name: mail_user id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: user_password_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.mail_user ALTER COLUMN id SET DEFAULT nextval('public.mail_user_id_seq'::regclass);
-
-
---
--- Name: mail_user mail_user.oid.mail_id; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.mail_user
-    ADD CONSTRAINT "mail_user.oid.mail_id" UNIQUE (oid, mail_id);
+CREATE SEQUENCE public.user_password_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
 --
--- Name: mail_user_log mail_user_bak_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_password_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.mail_user_log
-    ADD CONSTRAINT mail_user_bak_pkey PRIMARY KEY (id);
+ALTER SEQUENCE public.user_password_id_seq OWNED BY public.user_password.id;
 
 
 --
--- Name: mail_user mail_user_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: user_log id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.mail_user
-    ADD CONSTRAINT mail_user_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.user_log ALTER COLUMN id SET DEFAULT nextval('public.user_log_id_seq'::regclass);
+
+
+--
+-- Name: user_mail id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mail ALTER COLUMN id SET DEFAULT nextval('public.user_mail_id_seq'::regclass);
+
+
+--
+-- Name: user_password id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_password ALTER COLUMN id SET DEFAULT nextval('public.user_password_id_seq'::regclass);
+
+
+--
+-- Name: user_log user_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_log
+    ADD CONSTRAINT user_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_mail user_mail.oid.mail_id; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mail
+    ADD CONSTRAINT "user_mail.oid.mail_id" UNIQUE (oid, mail_id);
+
+
+--
+-- Name: user_password user_mail.oid.uid; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_password
+    ADD CONSTRAINT "user_mail.oid.uid" UNIQUE (oid, uid);
+
+
+--
+-- Name: user_mail user_mail_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_mail
+    ADD CONSTRAINT user_mail_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_password user_password_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_password
+    ADD CONSTRAINT user_password_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_log.uid.oid.cid.ctime; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "user_log.uid.oid.cid.ctime" ON public.user_log USING btree (uid, oid, cid, ctime DESC);
+
+
+--
+-- Name: user_log.uid.oid.ctime; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX "user_log.uid.oid.ctime" ON public.user_log USING btree (uid, oid, ctime DESC);
 
 
 --
