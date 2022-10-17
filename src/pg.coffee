@@ -45,7 +45,7 @@ dump = (mod)=>
     fp = "pg/table/#{db}/#{schema_name}.sql"
     write(
       fp
-      read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXIST ')
+      read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ')
     )
   return
 
