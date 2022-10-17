@@ -40,7 +40,7 @@ CREATE TABLE public.client_ip (
     id public.u64 NOT NULL,
     client_id public.u64 NOT NULL,
     ip bytea NOT NULL,
-    ctime public.u64 DEFAULT date_part('epoch'::text, now()) NOT NULL
+    ctime public.u64 DEFAULT (date_part('epoch'::text, now()))::integer NOT NULL
 );
 
 
