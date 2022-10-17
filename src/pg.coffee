@@ -39,14 +39,16 @@ dump = (mod)=>
     if schema_name == 'pg_toast'
       continue
     await Promise.all [
-      $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
+      do =>
+        await $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
+        fp = "pg/table/#{db}/#{schema_name}.sql"
+        write(
+          fp
+          read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ')
+        )
+        return
       $"#{ROOT}/pg/data.sh #{bucket} #{db} #{schema_name}"
     ]
-    fp = "pg/table/#{db}/#{schema_name}.sql"
-    write(
-      fp
-      read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ')
-    )
   return
 
 backup = =>
