@@ -48,7 +48,12 @@ dump = (mod)=>
           read(fp).replace(
             create_schema
             create_schema+'\nSET search_path TO '+schema_name+';'
-          ).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ').replaceAll(schema_name+'.','')
+          ).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ').replaceAll(schema_name+'.','').split('\n').filter(
+            (i)=>
+              if not i
+                return false
+              return not i.startsWith '--'
+          ).join('\n')
         )
         return
       $"#{ROOT}/pg/data.sh #{bucket} #{db} #{schema_name}"
