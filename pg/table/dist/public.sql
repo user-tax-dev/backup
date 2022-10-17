@@ -19,6 +19,7 @@ SET row_security = off;
 --
 
 CREATE SCHEMA IF NOT EXISTS public;
+SET search_path TO public;
 
 
 SET default_tablespace = '';
@@ -27,7 +28,7 @@ SET default_tablespace = '';
 -- Name: host; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.host (
+CREATE TABLE host (
     id bigint NOT NULL,
     val text NOT NULL
 );
@@ -37,7 +38,7 @@ CREATE TABLE public.host (
 -- Name: host_hash; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.host_hash (
+CREATE TABLE host_hash (
     id bigint NOT NULL,
     host_id bigint NOT NULL,
     hash_id bigint NOT NULL,
@@ -50,7 +51,7 @@ CREATE TABLE public.host_hash (
 -- Name: host_hash_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.host_hash_id_seq
+CREATE SEQUENCE host_hash_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -62,14 +63,14 @@ CREATE SEQUENCE public.host_hash_id_seq
 -- Name: host_hash_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.host_hash_id_seq OWNED BY public.host_hash.id;
+ALTER SEQUENCE host_hash_id_seq OWNED BY host_hash.id;
 
 
 --
 -- Name: host_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.host_id_seq
+CREATE SEQUENCE host_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -81,28 +82,28 @@ CREATE SEQUENCE public.host_id_seq
 -- Name: host_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.host_id_seq OWNED BY public.host.id;
+ALTER SEQUENCE host_id_seq OWNED BY host.id;
 
 
 --
 -- Name: host id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host ALTER COLUMN id SET DEFAULT nextval('public.host_id_seq'::regclass);
+ALTER TABLE ONLY host ALTER COLUMN id SET DEFAULT nextval('host_id_seq'::regclass);
 
 
 --
 -- Name: host_hash id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host_hash ALTER COLUMN id SET DEFAULT nextval('public.host_hash_id_seq'::regclass);
+ALTER TABLE ONLY host_hash ALTER COLUMN id SET DEFAULT nextval('host_hash_id_seq'::regclass);
 
 
 --
 -- Name: host host.val; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host
+ALTER TABLE ONLY host
     ADD CONSTRAINT "host.val" UNIQUE (val);
 
 
@@ -110,7 +111,7 @@ ALTER TABLE ONLY public.host
 -- Name: host_hash host_hash_host_id_hash_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host_hash
+ALTER TABLE ONLY host_hash
     ADD CONSTRAINT host_hash_host_id_hash_id_key UNIQUE (host_id, hash_id);
 
 
@@ -118,7 +119,7 @@ ALTER TABLE ONLY public.host_hash
 -- Name: host_hash host_hash_host_id_hash_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host_hash
+ALTER TABLE ONLY host_hash
     ADD CONSTRAINT host_hash_host_id_hash_key UNIQUE (host_id, hash);
 
 
@@ -126,7 +127,7 @@ ALTER TABLE ONLY public.host_hash
 -- Name: host_hash host_hash_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host_hash
+ALTER TABLE ONLY host_hash
     ADD CONSTRAINT host_hash_pkey PRIMARY KEY (id);
 
 
@@ -134,7 +135,7 @@ ALTER TABLE ONLY public.host_hash
 -- Name: host host_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.host
+ALTER TABLE ONLY host
     ADD CONSTRAINT host_pkey PRIMARY KEY (id);
 
 

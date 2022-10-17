@@ -42,9 +42,13 @@ dump = (mod)=>
       do =>
         await $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
         fp = "pg/table/#{db}/#{schema_name}.sql"
+        create_schema = "CREATE SCHEMA #{schema_name};"
         write(
           fp
-          read(fp).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ')
+          read(fp).replace(
+            create_schema
+            create_schema+'\nSET search_path TO '+schema_name+';'
+          ).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ').replaceAll(schema_name+'.','')
         )
         return
       $"#{ROOT}/pg/data.sh #{bucket} #{db} #{schema_name}"
