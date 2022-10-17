@@ -33,17 +33,48 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- Name: client_ip; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.client_ip (
+    id public.u64 NOT NULL,
+    client_id public.u64 NOT NULL,
+    ip bytea NOT NULL,
+    ctime public.u64 DEFAULT date_part('epoch'::text, now()) NOT NULL
+);
+
+
+--
+-- Name: client_ip_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.client_ip_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: client_ip_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.client_ip_id_seq OWNED BY public.client_ip.id;
+
+
+--
 -- Name: user_log; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.user_log (
     id public.u64 NOT NULL,
     oid public.u64 NOT NULL,
-    cid public.u16 NOT NULL,
+    action public.u16 NOT NULL,
     uid public.u64 NOT NULL,
     val bytea DEFAULT '\x'::bytea NOT NULL,
     ctime public.u64 DEFAULT date_part('epoch'::text, now()) NOT NULL,
-    ip bytea
+    client_id public.u64 NOT NULL
 );
 
 
@@ -130,6 +161,13 @@ ALTER SEQUENCE public.user_password_id_seq OWNED BY public.user_password.id;
 
 
 --
+-- Name: client_ip id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.client_ip ALTER COLUMN id SET DEFAULT nextval('public.client_ip_id_seq'::regclass);
+
+
+--
 -- Name: user_log id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -151,11 +189,27 @@ ALTER TABLE ONLY public.user_password ALTER COLUMN id SET DEFAULT nextval('publi
 
 
 --
+-- Name: client_ip client_ip_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.client_ip
+    ADD CONSTRAINT client_ip_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: user_log user_log_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_log
     ADD CONSTRAINT user_log_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: client_ip user_mail.ip.ctime; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.client_ip
+    ADD CONSTRAINT "user_mail.ip.ctime" UNIQUE (ip, ctime);
 
 
 --
@@ -191,10 +245,10 @@ ALTER TABLE ONLY public.user_password
 
 
 --
--- Name: user_log.uid.oid.cid.ctime; Type: INDEX; Schema: public; Owner: -
+-- Name: user_log.uid.oid.action.ctime; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX "user_log.uid.oid.cid.ctime" ON public.user_log USING btree (uid, oid, cid, ctime DESC);
+CREATE INDEX "user_log.uid.oid.action.ctime" ON public.user_log USING btree (uid, oid, action, ctime DESC);
 
 
 --
