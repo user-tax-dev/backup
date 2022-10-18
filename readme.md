@@ -1,3 +1,6 @@
+## 导入数据
+
+`psql postgres:// 用户名 : 密码 @ 主机 : 端口 / 数据库 < pg/table/user.tax/public.sql`
 
 ## 脚本用途
 
