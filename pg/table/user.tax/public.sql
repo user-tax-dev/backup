@@ -11,14 +11,6 @@ SET row_security = off;
 CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 COMMENT ON SCHEMA public IS 'standard public schema';
-CREATE FUNCTION client_new(client_id u64, ip bytea) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-Declare
-BEGIN
-INSERT INTO client_ip(client_id,ip) VALUES(client_id,ip) ON CONFLICT DO NOTHING;
-END;
-$$;
 CREATE FUNCTION client_new(client_id u64, ip bytea, browser_name character varying, browser_ver u32, os_name character varying, os_ver u32, device_vendor character varying, device_model character varying) RETURNS void
     LANGUAGE plpgsql
     AS $$
