@@ -8,7 +8,8 @@ SET check_function_bodies = FALSE;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = OFF;
-CREATE SCHEMA IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public;
+CREATE SCHEMA IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public;
+SET search_path TO public;
 SET search_path TO public;
 SET search_path TO public;
 SET search_path TO public;
@@ -268,5 +269,5 @@ ALTER TABLE ONLY user_password
   ADD CONSTRAINT user_password_oid_uid UNIQUE (oid, uid);
 ALTER TABLE ONLY user_password
   ADD CONSTRAINT user_password_pkey PRIMARY KEY (id);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
-CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);
