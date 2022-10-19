@@ -17,9 +17,16 @@ SET xmloption = content;
 SET client_min_messages = warning;
 
 SET row_security = OFF;
+<<<<<<< HEAD
 
 CREATE SCHEMA IF NOT EXISTS public;
 
+=======
+CREATE SCHEMA IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS public;
+SET search_path TO public;
+SET search_path TO public;
+SET search_path TO public;
+>>>>>>> 67fceba9890f43a8259a734ba381ebab95994bcd
 SET search_path TO public;
 
 COMMENT ON SCHEMA public IS 'standard public schema';
@@ -328,7 +335,12 @@ ALTER TABLE ONLY user_password
 
 ALTER TABLE ONLY user_password
   ADD CONSTRAINT user_password_pkey PRIMARY KEY (id);
+<<<<<<< HEAD
 
 CREATE INDEX IF NOT EXISTS "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
 
 CREATE INDEX IF NOT EXISTS "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);
+=======
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
+CREATE INDEX IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS IF NOT EXISTS "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);
+>>>>>>> 67fceba9890f43a8259a734ba381ebab95994bcd
