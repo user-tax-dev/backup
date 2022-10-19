@@ -163,7 +163,7 @@ INSERT INTO device (device_vendor, device_model)
   ELSE
     device_id = 0;
   END IF;
-  now = (date_part('epoch'::text, now()))::u64;
+  now = (date_part('epoch'::text, now()))::integer;
   INSERT INTO client_ip (client_id, ip, ctime)
     VALUES (client_id, ip, now)
   ON CONFLICT
