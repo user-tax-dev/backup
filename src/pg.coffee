@@ -41,7 +41,7 @@ dump = (mod)=>
     await Promise.all [
       do =>
         await $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
-        fp = "pg/table/#{db}/#{schema_name}.sql"
+        fp = join ROOT, "pg/table/#{db}/#{schema_name}.sql"
         create_schema = "CREATE SCHEMA #{schema_name};"
         write(
           fp
