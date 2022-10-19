@@ -11,6 +11,98 @@ SET row_security = off;
 CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 COMMENT ON SCHEMA public IS 'standard public schema';
+CREATE TYPE _u16 (
+    INTERNALLENGTH = variable,
+    INPUT = array_in,
+    OUTPUT = array_out,
+    RECEIVE = array_recv,
+    SEND = array_send,
+    ANALYZE = array_typanalyze,
+    SUBSCRIPT = array_subscript_handler,
+    ELEMENT = ???,
+    CATEGORY = 'A',
+    ALIGNMENT = int4,
+    STORAGE = extended
+);
+CREATE TYPE _u32 (
+    INTERNALLENGTH = variable,
+    INPUT = array_in,
+    OUTPUT = array_out,
+    RECEIVE = array_recv,
+    SEND = array_send,
+    ANALYZE = array_typanalyze,
+    SUBSCRIPT = array_subscript_handler,
+    ELEMENT = ???,
+    CATEGORY = 'A',
+    ALIGNMENT = int4,
+    STORAGE = extended
+);
+CREATE TYPE _u64 (
+    INTERNALLENGTH = variable,
+    INPUT = array_in,
+    OUTPUT = array_out,
+    RECEIVE = array_recv,
+    SEND = array_send,
+    ANALYZE = array_typanalyze,
+    SUBSCRIPT = array_subscript_handler,
+    ELEMENT = ???,
+    CATEGORY = 'A',
+    ALIGNMENT = double,
+    STORAGE = extended
+);
+CREATE TYPE _u8 (
+    INTERNALLENGTH = variable,
+    INPUT = array_in,
+    OUTPUT = array_out,
+    RECEIVE = array_recv,
+    SEND = array_send,
+    ANALYZE = array_typanalyze,
+    SUBSCRIPT = array_subscript_handler,
+    ELEMENT = ???,
+    CATEGORY = 'A',
+    ALIGNMENT = int4,
+    STORAGE = extended
+);
+CREATE TYPE u16 (
+    INTERNALLENGTH = 2,
+    INPUT = u16in,
+    OUTPUT = u16out,
+    RECEIVE = u16recv,
+    SEND = u16send,
+    ALIGNMENT = int2,
+    STORAGE = plain,
+    PASSEDBYVALUE
+);
+CREATE TYPE u32 (
+    INTERNALLENGTH = 4,
+    INPUT = u32in,
+    OUTPUT = u32out,
+    RECEIVE = u32recv,
+    SEND = u32send,
+    ALIGNMENT = int4,
+    STORAGE = plain,
+    PASSEDBYVALUE
+);
+CREATE TYPE u64 (
+    INTERNALLENGTH = 8,
+    INPUT = u64in,
+    OUTPUT = u64out,
+    RECEIVE = u64recv,
+    SEND = u64send,
+    ALIGNMENT = double,
+    STORAGE = plain,
+    PASSEDBYVALUE
+);
+CREATE TYPE u8 (
+    INTERNALLENGTH = 1,
+    INPUT = u8in,
+    OUTPUT = u8out,
+    RECEIVE = u8recv,
+    SEND = u8send,
+    ALIGNMENT = char,
+    STORAGE = plain,
+    PASSEDBYVALUE
+);
 CREATE OR REPLACE FUNCTION client_new(client_id u64, ip bytea, browser_name character varying, browser_ver u32, os_name character varying, os_ver u32, device_vendor character varying, device_model character varying) RETURNS void
     LANGUAGE plpgsql
     AS $$
@@ -71,7 +163,7 @@ INSERT INTO device (device_vendor, device_model)
   ELSE
     device_id = 0;
   END IF;
-  now = (date_part('epoch'::text, now()))::integer;
+  now = (date_part('epoch'::text, now()))::u64;
   INSERT INTO client_ip (client_id, ip, ctime)
     VALUES (client_id, ip, now)
   ON CONFLICT
@@ -211,7 +303,7 @@ CREATE TABLE user_log (
     action u16 NOT NULL,
     uid u64 NOT NULL,
     val bytea DEFAULT '\x'::bytea NOT NULL,
-    ctime u64 DEFAULT date_part('epoch'::text, now()) NOT NULL,
+    ctime u64 DEFAULT (date_part('epoch'::text, now()))::integer NOT NULL,
     client_id u64 NOT NULL
 );
 CREATE SEQUENCE user_log_id_seq
