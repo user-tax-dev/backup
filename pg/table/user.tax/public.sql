@@ -11,91 +11,129 @@ SET row_security = off;
 CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 COMMENT ON SCHEMA public IS 'standard public schema';
-CREATE FUNCTION client_new(client_id u64, ip bytea, browser_name character varying, browser_ver u32, os_name character varying, os_ver u32, device_vendor character varying, device_model character varying) RETURNS void
-    LANGUAGE plpgsql
-    AS $$
-Declare 
-now u64;
-browser_id u32;
-os_id u32;
-device_id u32;
-BEGIN
-IF browser_name!='' THEN
-WITH e AS (INSERT INTO browser (name,ver) VALUES (browser_name,browser_ver) ON CONFLICT(name,ver) DO NOTHING RETURNING id)
-SELECT id INTO browser_id FROM e UNION SELECT id FROM browser WHERE name=browser_name and ver=browser_ver;
-ELSE
-browser_id = 0;
-END IF;
-IF os_name!='' THEN
-WITH e AS (INSERT INTO os (name,ver) VALUES (os_name,os_ver) ON CONFLICT(name,ver) DO NOTHING RETURNING id)
-SELECT id INTO os_id FROM e UNION SELECT id FROM os WHERE name=os_name and ver=os_ver;
-ELSE
-os_id = 0;
-END IF;
-IF device_vendor!='' THEN
-WITH e AS (INSERT INTO device (device_vendor,device_model) VALUES (device_vendor,device_model) ON CONFLICT(vendor,model) DO NOTHING RETURNING id)
-SELECT id INTO device_id FROM e UNION SELECT id FROM device WHERE vendor=device_vendor and model=device_model;
-ELSE
-device_id = 0;
-END IF;
-now=(date_part('epoch'::text, now()))::integer;
-INSERT INTO client_ip(client_id,ip,ctime) VALUES(client_id,ip,now) ON CONFLICT DO NOTHING;
-INSERT INTO client_meta (client_id,os_id,browser_id,device_id,ctime) VALUES (client_id,os_id,browser_id,device_id,now);
-END;
-$$;
-CREATE FUNCTION drop_func(_name text, OUT functions_dropped integer) RETURNS integer
+CREATE OR REPLACE FUNCTION client_new(client_id u64, ip bytea, browser_name character varying, browser_ver u32, os_name character varying, os_ver u32, device_vendor character varying, device_model character varying) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
-   _sql text;
+  now u64;
+  browser_id u32;
+  os_id u32;
+  device_id u32;
 BEGIN
-   SELECT count(*)::int
-        , 'DROP FUNCTION ' || string_agg(oid::regprocedure::text, '; DROP FUNCTION ')
-   FROM   pg_catalog.pg_proc
-   WHERE  proname = _name
-   AND    pg_function_is_visible(oid)  -- restrict to current search_path
-   INTO   functions_dropped, _sql;     -- count only returned if subsequent DROPs succeed
-   IF functions_dropped > 0 THEN       -- only if function(s) found
-     EXECUTE _sql;
-   END IF;
-END
+  IF browser_name != '' THEN
+    WITH e AS (
+INSERT INTO browser (name, ver)
+        VALUES (browser_name, browser_ver)
+      ON CONFLICT (name, ver)
+        DO NOTHING
+      RETURNING id)
+      SELECT id INTO browser_id
+      FROM e
+      UNION
+      SELECT id
+      FROM browser
+      WHERE name = browser_name
+          AND ver = browser_ver;
+  ELSE
+    browser_id = 0;
+  END IF;
+  IF os_name != '' THEN
+    WITH e AS (
+INSERT INTO os (name, ver)
+        VALUES (os_name, os_ver)
+      ON CONFLICT (name, ver)
+        DO NOTHING
+      RETURNING id)
+      SELECT id INTO os_id
+      FROM e
+      UNION
+      SELECT id
+      FROM os
+      WHERE name = os_name
+          AND ver = os_ver;
+  ELSE
+    os_id = 0;
+  END IF;
+  IF device_vendor != '' THEN
+    WITH e AS (
+INSERT INTO device (device_vendor, device_model)
+        VALUES (device_vendor, device_model)
+      ON CONFLICT (vendor, model)
+        DO NOTHING
+      RETURNING id)
+      SELECT id INTO device_id
+      FROM e
+      UNION
+      SELECT id
+      FROM device
+      WHERE vendor = device_vendor
+          AND model = device_model;
+  ELSE
+    device_id = 0;
+  END IF;
+  now = (date_part('epoch'::text, now()))::integer;
+  INSERT INTO client_ip (client_id, ip, ctime)
+    VALUES (client_id, ip, now)
+  ON CONFLICT
+    DO NOTHING;
+  INSERT INTO client_meta (client_id, os_id, browser_id, device_id, ctime)
+    VALUES (client_id, os_id, browser_id, device_id, now);
+END;
 $$;
-CREATE FUNCTION signup_mail(client_id u64, oid u64, mail_id u64, ctime u64, password_hash bytea) RETURNS u64
+CREATE OR REPLACE FUNCTION drop_func(_name text, OUT functions_dropped integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
-  DECLARE
-    user_id u64;
-  BEGIN
+DECLARE
+  _sql text;
+BEGIN
+  SELECT count(*)::int, 'DROP FUNCTION ' || string_agg(oid::regprocedure::text, '; DROP FUNCTION ')
+  FROM pg_catalog.pg_proc
+  WHERE proname = _name
+    AND pg_function_is_visible(oid) -- restrict to current search_path
+    INTO functions_dropped, _sql;
+  -- count only returned if subsequent DROPs succeed
+  IF functions_dropped > 0 THEN
+    -- only if function(s) found
+    EXECUTE _sql;
+  END IF;
+END
+$$;
+CREATE OR REPLACE FUNCTION signup_mail(client_id u64, oid u64, mail_id u64, ctime u64, password_hash bytea) RETURNS u64
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+  user_id u64;
+BEGIN
+  SELECT uid INTO user_id
+  FROM user_mail
+  WHERE user_mail.oid = signup_mail.oid
+    AND user_mail.mail_id = signup_mail.mail_id;
+  IF user_id IS NULL THEN
     SELECT uid INTO user_id
     FROM user_mail
-    WHERE user_mail.oid = signup_mail.oid
-      AND user_mail.mail_id = signup_mail.mail_id;
-    IF user_id IS NULL THEN
-      SELECT uid INTO user_id
-      FROM user_mail
-      WHERE user_mail.mail_id = signup_mail.mail_id
-      ORDER BY id
-      LIMIT 1;
-      IF (user_id IS NULL) OR EXISTS (
-      SELECT 1
-      FROM user_mail
-      WHERE signup_mail.oid = user_mail.oid AND uid = user_id) THEN
-        SELECT nextval('uid'::regclass) INTO user_id;
-        INSERT INTO user_mail (oid, uid, mail_id)
-          VALUES (oid, user_id, mail_id);
-      END IF;
+    WHERE user_mail.mail_id = signup_mail.mail_id
+    ORDER BY id
+    LIMIT 1;
+    IF (user_id IS NULL) OR EXISTS (
+    SELECT 1
+    FROM user_mail
+    WHERE signup_mail.oid = user_mail.oid AND uid = user_id) THEN
+      SELECT nextval('uid'::regclass) INTO user_id;
+      INSERT INTO user_mail (oid, uid, mail_id)
+        VALUES (oid, user_id, mail_id);
     END IF;
-    INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
-      VALUES (client_id, oid, user_id, ctime, 1, password_hash);
-    INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
-      VALUES (client_id, oid, user_id, ctime, 2, mail_id::u64);
-    INSERT INTO user_password (oid, uid, hash, ctime)
-      VALUES (oid, user_id, password_hash, ctime)
-    ON CONFLICT on constraint user_password_oid_uid
-      DO UPDATE SET hash = excluded.hash, ctime = excluded.ctime;
-    RETURN user_id;
-  END;
-  $$;
+  END IF;
+  INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
+    VALUES (client_id, oid, user_id, ctime, 1, password_hash);
+  INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
+    VALUES (client_id, oid, user_id, ctime, 2, mail_id::u64);
+  INSERT INTO user_password (oid, uid, hash, ctime)
+    VALUES (oid, user_id, password_hash, ctime)
+  ON CONFLICT ON CONSTRAINT user_password_oid_uid
+    DO UPDATE SET hash = excluded.hash, ctime = excluded.ctime;
+  RETURN user_id;
+END;
+$$;
 SET default_tablespace = '';
 SET default_table_access_method = heap;
 CREATE TABLE browser (
