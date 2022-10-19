@@ -88,11 +88,11 @@ CREATE FUNCTION signup_mail(client_id u64, oid u64, mail_id u64, ctime u64, pass
     INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
       VALUES (client_id, oid, user_id, ctime, 1, password_hash);
     INSERT INTO user_log (client_id, oid, uid, ctime, action, val)
-      VALUES (client_id, oid, user_id, ctime, 2, mail_id);
+      VALUES (client_id, oid, user_id, ctime, 2, mail_id::u64);
     INSERT INTO user_password (oid, uid, hash, ctime)
       VALUES (oid, user_id, password_hash, ctime)
-    ON CONFLICT (oid, uid)
-      DO UPDATE SET hash = password_hash, user_password.ctime = signup_mail.ctime;
+    ON CONFLICT on constraint user_mail_oid_mail_id
+      DO UPDATE SET hash = excluded.hash, user_password.ctime = excluded.ctime;
     RETURN user_id;
   END;
   $$;
@@ -237,10 +237,10 @@ ALTER TABLE ONLY user_log
     ADD CONSTRAINT user_log_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY client_ip
     ADD CONSTRAINT "user_mail.ip.ctime" UNIQUE (ip, ctime);
-ALTER TABLE ONLY user_mail
-    ADD CONSTRAINT "user_mail.oid.mail_id" UNIQUE (oid, mail_id);
 ALTER TABLE ONLY user_password
     ADD CONSTRAINT "user_mail.oid.uid" UNIQUE (oid, uid);
+ALTER TABLE ONLY user_mail
+    ADD CONSTRAINT user_mail_oid_mail_id UNIQUE (oid, mail_id);
 ALTER TABLE ONLY user_mail
     ADD CONSTRAINT user_mail_pkey PRIMARY KEY (id);
 ALTER TABLE ONLY user_password
