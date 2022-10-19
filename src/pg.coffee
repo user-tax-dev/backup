@@ -43,22 +43,24 @@ dump = (mod)=>
         await $"#{ROOT}/pg/table.sh #{db} #{schema_name}"
         for suffix from ['','.drop']
           fp = join ROOT, "pg/table/#{db}/#{schema_name}#{suffix}.sql"
+          sql = read(fp)
+            .replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ')
+            .replaceAll('CREATE FUNCTION ','CREATE OR REPLACE FUNCTION ')
+            .replaceAll('CREATE INDEX ','CREATE INDEX IF NOT EXISTS ')
+            .replace('DROP SCHEMA IF EXISTS public;','')
+            .replace(
+              /CREATE SCHEMA .*/g
+              (t)=>
+                t+'\nSET search_path TO '+schema_name+';\n'
+            ).replaceAll(schema_name+'.','').split('\n').filter(
+            (i)=>
+              if not i
+                return false
+              return not i.startsWith '--'
+            ).join('\n')
           write(
             fp
-            read(fp)
-              .replaceAll('CREATE FUNCTION ','CREATE OR REPLACE FUNCTION ')
-              .replaceAll('CREATE INDEX ','CREATE INDEX IF NOT EXISTS ')
-              .replace('DROP SCHEMA IF EXISTS public;','')
-              .replace(
-                /CREATE SCHEMA .*/g
-                (t)=>
-                  t+'\nSET search_path TO '+schema_name+';\n'
-              ).replaceAll('CREATE SCHEMA ','CREATE SCHEMA IF NOT EXISTS ').replaceAll(schema_name+'.','').split('\n').filter(
-              (i)=>
-                if not i
-                  return false
-                return not i.startsWith '--'
-            ).join('\n')
+            sql
           )
         return
       $"#{ROOT}/pg/data.sh #{bucket} #{db} #{schema_name}"
