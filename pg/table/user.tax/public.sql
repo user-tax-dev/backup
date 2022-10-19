@@ -86,7 +86,7 @@ CREATE OR REPLACE FUNCTION drop_func(_name text, OUT functions_dropped integer) 
 DECLARE
   _sql text;
 BEGIN
-  SELECT count(*)::int, 'DROP FUNCTION ' || string_agg(oid::regprocedure::text, '; DROP FUNCTION ')
+  SELECT count(*)::int, 'drop function ' || string_agg(oid::regprocedure::text, '; drop function ')
   FROM pg_catalog.pg_proc
   WHERE proname = _name
     AND pg_function_is_visible(oid) -- restrict to current search_path
