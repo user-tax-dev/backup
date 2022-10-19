@@ -43,108 +43,24 @@ INSERT INTO client_ip(client_id,ip,ctime) VALUES(client_id,ip,now) ON CONFLICT D
 INSERT INTO client_meta (client_id,os_id,browser_id,device_id,ctime) VALUES (client_id,os_id,browser_id,device_id,now);
 END;
 $$;
-CREATE FUNCTION mail_new(mail_id u64) RETURNS u64
+CREATE FUNCTION drop_func(_name text, OUT functions_dropped integer) RETURNS integer
     LANGUAGE plpgsql
     AS $$
 DECLARE
-  uid u64;
-  pre_ctime u64;
-  pre_password_hash md5hash;
+   _sql text;
 BEGIN
-  SELECT user_mail.uid INTO uid FROM user_mail
-  	WHERE user_mail.oid = oid AND user_mail.mail_id = mail_id;
-  IF uid IS NULL THEN
-    SELECT user_mail.uid INTO uid FROM user_mail
-    WHERE user_mail.mail_id = mail_new.mail_id
-    ORDER BY id
-    LIMIT 1;
-    IF (uid IS NULL) OR EXISTS (
-    SELECT 1
-    FROM user_mail
-    WHERE mail_new.oid = user_mail.oid AND user_mail.uid = mail_new.uid) THEN
-      SELECT nextval('uid'::regclass) INTO uid;
-    END IF;
-  END IF;
-  RETURN uid;
-END;
+   SELECT count(*)::int
+        , 'DROP FUNCTION ' || string_agg(oid::regprocedure::text, '; DROP FUNCTION ')
+   FROM   pg_catalog.pg_proc
+   WHERE  proname = _name
+   AND    pg_function_is_visible(oid)  -- restrict to current search_path
+   INTO   functions_dropped, _sql;     -- count only returned if subsequent DROPs succeed
+   IF functions_dropped > 0 THEN       -- only if function(s) found
+     EXECUTE _sql;
+   END IF;
+END
 $$;
-CREATE FUNCTION mail_new(oid u64, mail_id u64) RETURNS u64
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  user_id u64;
-  pre_ctime u64;
-  pre_password_hash md5hash;
-BEGIN
-  SELECT uid INTO user_id FROM user_mail
-  	WHERE user_mail.oid = mail_new.oid AND user_mail.mail_id = mail_new.mail_id;
-  IF user_id IS NULL THEN
-    SELECT uid INTO user_id FROM user_mail
-    WHERE user_mail.mail_id = mail_new.mail_id
-    ORDER BY id
-    LIMIT 1;
-    IF (user_id IS NULL) OR EXISTS (
-    SELECT 1
-    FROM user_mail
-    WHERE mail_new.oid = user_mail.oid AND uid=user_id) THEN
-      SELECT nextval('uid'::regclass) INTO user_id;
-      INSERT INTO user_mail(oid,uid,mail_id) VALUES (oid,user_id,mail_id);
-    END IF;
-  END IF;
-  RETURN user_id;
-END;
-$$;
-CREATE FUNCTION mail_new(mail_id u64, oid u64, password_hash bytea, ctime u64) RETURNS u64
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  uid u64;
-  pre_ctime u64;
-  pre_password_hash md5hash;
-BEGIN
-  SELECT user_mail.uid INTO uid 
-  	WHERE user_mail.oid = oid AND user_mail.mail_id = mail_id;
-  IF uid IS NULL THEN
-    SELECT user_mail.uid INTO uid
-    WHERE user_mail.mail_id = mail_new.mail_id
-    ORDER BY id
-    LIMIT 1;
-    IF (uid IS NULL) OR EXISTS (
-    SELECT 1
-    FROM user_mail
-    WHERE mail_new.oid = user_mail.oid AND user_mail.uid = mail_new.uid) THEN
-      SELECT nextval('uid'::regclass) INTO uid;
-    END IF;
-  END IF;
-  RETURN uid;
-END;
-$$;
-CREATE FUNCTION mail_new(name character varying, oid u64, mail_id u64, password_hash bytea, ctime u64) RETURNS u64
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  uid u64;
-  pre_ctime u64;
-  pre_password_hash md5hash;
-BEGIN
-  SELECT user_mail.uid INTO uid 
-  	WHERE user_mail.oid = oid AND user_mail.mail_id = mail_id;
-  IF uid IS NULL THEN
-    SELECT user_mail.uid INTO uid
-    WHERE user_mail.mail_id = mail_new.mail_id
-    ORDER BY id
-    LIMIT 1;
-    IF (uid IS NULL) OR EXISTS (
-    SELECT 1
-    FROM user_mail
-    WHERE mail_new.oid = user_mail.oid AND user_mail.uid = mail_new.uid) THEN
-      SELECT nextval('uid'::regclass) INTO uid;
-    END IF;
-  END IF;
-  RETURN uid;
-END;
-$$;
-CREATE FUNCTION mail_new(client_id u64, oid u64, mail_id u64, ctime u64, password_hash bytea) RETURNS u64
+CREATE FUNCTION signup_mail(client_id u64, oid u64, mail_id u64, ctime u64, password_hash bytea) RETURNS u64
     LANGUAGE plpgsql
     AS $$
   DECLARE
@@ -152,18 +68,18 @@ CREATE FUNCTION mail_new(client_id u64, oid u64, mail_id u64, ctime u64, passwor
   BEGIN
     SELECT uid INTO user_id
     FROM user_mail
-    WHERE user_mail.oid = mail_new.oid
-      AND user_mail.mail_id = mail_new.mail_id;
+    WHERE user_mail.oid = signup_mail.oid
+      AND user_mail.mail_id = signup_mail.mail_id;
     IF user_id IS NULL THEN
       SELECT uid INTO user_id
       FROM user_mail
-      WHERE user_mail.mail_id = mail_new.mail_id
+      WHERE user_mail.mail_id = signup_mail.mail_id
       ORDER BY id
       LIMIT 1;
       IF (user_id IS NULL) OR EXISTS (
       SELECT 1
       FROM user_mail
-      WHERE mail_new.oid = user_mail.oid AND uid = user_id) THEN
+      WHERE signup_mail.oid = user_mail.oid AND uid = user_id) THEN
         SELECT nextval('uid'::regclass) INTO user_id;
         INSERT INTO user_mail (oid, uid, mail_id)
           VALUES (oid, user_id, mail_id);
@@ -176,7 +92,7 @@ CREATE FUNCTION mail_new(client_id u64, oid u64, mail_id u64, ctime u64, passwor
     INSERT INTO user_password (oid, uid, hash, ctime)
       VALUES (oid, user_id, password_hash, ctime)
     ON CONFLICT (oid, uid)
-      DO UPDATE SET hash = password_hash, user_password.ctime = mail_new.ctime;
+      DO UPDATE SET hash = password_hash, user_password.ctime = signup_mail.ctime;
     RETURN user_id;
   END;
   $$;
