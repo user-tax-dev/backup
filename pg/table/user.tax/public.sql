@@ -8,7 +8,7 @@ SET check_function_bodies = false;
 SET xmloption = content;
 SET client_min_messages = warning;
 SET row_security = off;
-CREATE SCHEMA IF NOT EXISTS IF NOT EXISTS public;
+CREATE SCHEMA IF NOT EXISTS public;
 SET search_path TO public;
 COMMENT ON SCHEMA public IS 'standard public schema';
 CREATE OR REPLACE FUNCTION client_new(client_id u64, ip bytea, browser_name character varying, browser_ver u32, os_name character varying, os_ver u32, device_vendor character varying, device_model character varying) RETURNS void
@@ -283,5 +283,5 @@ ALTER TABLE ONLY user_password
     ADD CONSTRAINT user_password_oid_uid UNIQUE (oid, uid);
 ALTER TABLE ONLY user_password
     ADD CONSTRAINT user_password_pkey PRIMARY KEY (id);
-CREATE INDEX "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
-CREATE INDEX "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);
+CREATE INDEX IF NOT EXISTS "user_log.uid.oid.action.ctime" ON user_log USING btree (uid, oid, action, ctime DESC);
+CREATE INDEX IF NOT EXISTS "user_log.uid.oid.ctime" ON user_log USING btree (uid, oid, ctime DESC);

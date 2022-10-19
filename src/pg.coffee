@@ -47,6 +47,7 @@ dump = (mod)=>
             fp
             read(fp)
               .replaceAll('CREATE FUNCTION ','CREATE OR REPLACE FUNCTION ')
+              .replaceAll('CREATE INDEX ','CREATE INDEX IF NOT EXISTS ')
               .replace('DROP SCHEMA IF EXISTS public;','')
               .replace(
                 /CREATE SCHEMA .*/g
