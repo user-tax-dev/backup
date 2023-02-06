@@ -10,7 +10,7 @@ filepath=$(realpath $1)
 fi
 
 exec node \
-  --es-module-specifier-resolution=node \
+ 
   --trace-uncaught \
   --expose-gc \
   --loader "@iuser/node-loader" \
